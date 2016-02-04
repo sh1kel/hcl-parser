@@ -2,10 +2,28 @@
 
 from lxml import etree
 import sys
-import re
-import string
+from sqlalchemy import create_engine, Table, MetaData, orm
+
+# db credentials
+db_user = 'root'
+db_pass = ''
+db_host = 'localhost'
+db_name = 'hcl'
 
 xml_line = ''
+sql_engine = create_engine("mysql://db_user:db_pass@db_host/db_name", echo=True)
+
+# DB prepare
+Base = declarative_base()
+
+class validation(Base):
+    __tablename__ = 'validation'
+    id          = Column(integer, primary_key=True)
+    server_id   = Column(integer)
+    release_id  = Column(integer)
+    val_date    = Column(datetime)
+    customized_bootstrap = Column(integer)
+    notes       = Column(string)
 
 if len(sys.argv) < 2:
     print "Use the Params Luke..."
