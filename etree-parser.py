@@ -25,6 +25,46 @@ class validation(Base):
     customized_bootstrap = Column(integer)
     notes       = Column(string)
 
+    class server(Base):
+    __tablename__       = 'server'
+    id                  = Column(integer, primary_key=True)
+    server_vendor_id    = Column(integer)
+    name                = Column(string)
+    notes               = Column(string)
+
+class server_vendor(Base):
+    __tablename__       = 'server_vendor'
+    id                  = Column(integer, primary_key=True)
+    name                = Column(string)
+
+class releases(Base):
+    __tablename__       = 'releases'
+    id                  = Column(integer, primary_key=True)
+    name                = Column(string)
+
+class dev_to_validation(Base):
+    __tablename__       = 'dev-to-validation'
+    id                  = Column(integer, primary_key=True)
+    validation_id       = Column(integer)
+    device_id           = Column(integer)
+    driver_name         = Column(string)
+    driver_ver          = Column(string)
+    is_work             = Column(bool)
+
+class device(Base):
+    __tablename__       = 'device'
+    id                  = Column(integer, primary_key=True)
+    name                = Column(string)
+    type                = Column(string)
+    description         = Column(string)
+    device_maker_id     = Column(integer)
+
+class device_maker(Base):
+    __tablename__       = 'device_maker'
+    id                  = Column(integer, primary_key=True)
+    name                = Column(string)
+
+
 if len(sys.argv) < 2:
     print "Use the Params Luke..."
     print sys.argv[0], " hw_report_filename.txt"
