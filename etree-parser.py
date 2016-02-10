@@ -29,17 +29,20 @@ class validation(Base):
     customized_bootstrap = Column(Integer)
     notes               = Column(String)
 
-class server(Base):
+class Server(Base):
     __tablename__       = 'server'
     id                  = Column(Integer, ForeignKey("validation.server_id"), primary_key=True, nullable=False, autoincrement=True)
-    server_vendor_id    = Column(Integer, nullable=False, primary_key=True)
+    server_vendor_id    = Column(Integer, ForeignKey("server_vendor.id"), nullable=False, primary_key=True)
     name                = Column(String(128), unique=True)
     notes               = Column(String)
+    vendor              = relationship("Server_vendor")
 
-class server_vendor(Base):
+class Server_vendor(Base):
     __tablename__       = 'server_vendor'
-    id                  = Column(Integer, ForeignKey("server.server_verndor_id"), primary_key=True, nullable=False, autoincrement=True)
+    id                  = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     name                = Column(String(128), unique=True)
+    server              = relationship(Server, backref=backref('servers', uselist=True, cascade='delete,all'))
+
 
 class releases(Base):
     __tablename__       = 'releases'
@@ -113,6 +116,32 @@ if len(xml_line.strip()) > 0:
 else:
     print "XML file is broken"
     exit(0)
+
+    
+# get server info
+server_info = tree.xpath('/list/node')
+# server name
+server_name = server_info[0].find('product').text
+# server vendor
+server_vendor_name = server_info[0].find('vendor').text
+
+# supermicro hack
+if server_name.find('To be filled by') != -1:
+    server_name = server_name.split('(')[0]
+    server_name = server_name.rstrip()
+
+# vendor sql object
+server_vendor_obj = Server_vendor(name=server_vendor_name)
+# server sql object
+server_obj = Server(name = server_name, vendor = server_vendor_obj)
+
+session.add(server_vendor_obj)
+session.add(server_obj)
+session.commit()
+
+exit(0)
+
+
 
 nics = tree.xpath('/list/node/node[@id="core"]/descendant::node[@class="network"]')
 for nic in nics:
