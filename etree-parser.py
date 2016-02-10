@@ -18,51 +18,52 @@ Base = declarative_base()
 
 class validation(Base):
     __tablename__ = 'validation'
-    id          = Column(integer, primary_key=True)
-    server_id   = Column(integer)
-    release_id  = Column(integer)
-    val_date    = Column(datetime)
+    id                  = Column(integer, primary_key=True, autoincrement=True)
+    server_id           = Column(integer, nullable=False)
+    release_id          = Column(integer, nullable=False))
+    val_date            = Column(DateTime)
     customized_bootstrap = Column(integer)
-    notes       = Column(string)
+    notes               = Column(string)
 
-    class server(Base):
+class server(Base):
     __tablename__       = 'server'
-    id                  = Column(integer, primary_key=True)
-    server_vendor_id    = Column(integer)
-    name                = Column(string)
+    id                  = Column(integer, primary_key=True, ForeignKey("validation.server_id"), nullable=False, autoincrement=True)
+    server_vendor_id    = Column(integer, nullable=False)
+    name                = Column(string(128), unique=True)
     notes               = Column(string)
 
 class server_vendor(Base):
     __tablename__       = 'server_vendor'
-    id                  = Column(integer, primary_key=True)
-    name                = Column(string)
+    id                  = Column(integer, primary_key=True, ForeignKey("server.server_verndor_id"), nullable=False, autoincrement=True)
+    name                = Column(string(128), unique=True)
 
 class releases(Base):
     __tablename__       = 'releases'
-    id                  = Column(integer, primary_key=True)
-    name                = Column(string)
+    id                  = Column(integer, primary_key=True, ForeignKey("validation.release_id"), nullable=False, autoincrement=True)
+    name                = Column(string(64))
 
 class dev_to_validation(Base):
     __tablename__       = 'dev-to-validation'
-    id                  = Column(integer, primary_key=True)
-    validation_id       = Column(integer)
+    id                  = Column(integer, primary_key=True, autoincrement=True)
+    validation_id       = Column(integer, ForeignKey("validation.id"), nullable=False)
     device_id           = Column(integer)
-    driver_name         = Column(string)
-    driver_ver          = Column(string)
+    driver_name         = Column(string(128))
+    driver_ver          = Column(string(64))
     is_work             = Column(bool)
 
 class device(Base):
     __tablename__       = 'device'
-    id                  = Column(integer, primary_key=True)
-    name                = Column(string)
-    type                = Column(string)
+    id                  = Column(integer, primary_key=True, autoincrement=True)
+    name                = Column(string(128), unique=True, ForeignKey("dev-to-validation.device_id"), nullable=False)
+    type                = Column(string(64))
     description         = Column(string)
     device_maker_id     = Column(integer)
 
 class device_maker(Base):
     __tablename__       = 'device_maker'
-    id                  = Column(integer, primary_key=True)
-    name                = Column(string)
+    id                  = Column(integer, primary_key=True, ForeignKey("device.device_maker_id"), nullable=False, autoincrement=True)
+    name                = Column(string(128))
+
 
 
 if len(sys.argv) < 2:
