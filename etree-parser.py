@@ -20,36 +20,39 @@ session = Session()
 # DB prepare
 Base = declarative_base()
 
-class validation(Base):
+class Validation(Base):
     __tablename__       = 'validation'
     id                  = Column(Integer, primary_key=True, autoincrement=True)
     server_id           = Column(Integer, nullable=False, primary_key=True)
-    release_id          = Column(Integer, nullable=False, primary_key=True)
+    release_id          = Column(Integer, ForeignKey("releases.id"), nullable=False, primary_key=True)
     val_date            = Column(DateTime)
     customized_bootstrap = Column(Integer)
-    notes               = Column(String)
+    notes               = Column(String(255))
+    release             = relationship("Releases")
+    server              = relationship("Server", backref=backref('server'), uselist=True, cascade='delete,all')
 
 class Server(Base):
     __tablename__       = 'server'
     id                  = Column(Integer, ForeignKey("validation.server_id"), primary_key=True, nullable=False, autoincrement=True)
     server_vendor_id    = Column(Integer, ForeignKey("server_vendor.id"), nullable=False, primary_key=True)
     name                = Column(String(128), unique=True)
-    notes               = Column(String)
+    notes               = Column(String(255))
     vendor              = relationship("Server_vendor")
+    validation          = relationship("Validation")
 
 class Server_vendor(Base):
     __tablename__       = 'server_vendor'
     id                  = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     name                = Column(String(128), unique=True)
-    server              = relationship(Server, backref=backref('servers', uselist=True, cascade='delete,all'))
+    server              = relationship("Server", backref=backref('servers', uselist=True, cascade='delete,all'))
 
-
-class releases(Base):
+class Releases(Base):
     __tablename__       = 'releases'
-    id                  = Column(Integer, ForeignKey("validation.release_id"), primary_key=True, nullable=False, autoincrement=True)
-    name                = Column(String(64))
+    id                  = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    name                = Column(String(64), unique=True)
+    validation          = relationship("Validation", backref=backref('validation'), uselist=True, cascade='delete,all')
 
-class dev_to_validation(Base):
+class Dev_to_validation(Base):
     __tablename__       = 'dev-to-validation'
     id                  = Column(Integer, primary_key=True, autoincrement=True)
     validation_id       = Column(Integer, ForeignKey("validation.id"), nullable=False, primary_key=True)
@@ -58,22 +61,22 @@ class dev_to_validation(Base):
     driver_ver          = Column(String(64))
     is_work             = Column(Boolean)
 
-class device(Base):
+class Device(Base):
     __tablename__       = 'device'
     id                  = Column(Integer, ForeignKey("dev-to-validation.device_id"), primary_key=True, autoincrement=True, nullable=False)
     name                = Column(String(128), unique=True, nullable=False)
     type                = Column(String(64))
-    description         = Column(String)
-    device_maker_id     = Column(Integer, primary_key=True)
+    description         = Column(String(255))
+    device_maker_id     = Column(Integer, ForeignKey("device_maker.id"), primary_key=True)
+    maker               = relationship("Device_maker")
 
-class device_maker(Base):
+class Device_maker(Base):
     __tablename__       = 'device_maker'
-    id                  = Column(Integer, ForeignKey("device.device_maker_id"), primary_key=True, nullable=False, autoincrement=True)
-    name                = Column(String(128))
+    id                  = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    name                = Column(String(128), unique=True)
+    device              = relationship("Device", backref=backref('devices', uselist=True, cascade='delete,all'))
 
-
-
-
+Base.metadata.create_all(sql_engine)
 
 if len(sys.argv) < 2:
     print "Use the Params Luke..."
@@ -139,7 +142,6 @@ session.add(server_vendor_obj)
 session.add(server_obj)
 session.commit()
 
-exit(0)
 
 
 
