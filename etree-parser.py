@@ -12,7 +12,10 @@ db_host = 'localhost'
 db_name = 'hcl'
 
 xml_line = ''
-sql_engine = create_engine("mysql://db_user:db_pass@db_host/db_name", echo=True)
+sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name, echo=True)
+Session = sessionmaker(bind=sql_engine)
+session = Session()
+
 
 # DB prepare
 Base = declarative_base()
@@ -20,8 +23,8 @@ Base = declarative_base()
 class validation(Base):
     __tablename__       = 'validation'
     id                  = Column(Integer, primary_key=True, autoincrement=True)
-    server_id           = Column(Integer, nullable=False)
-    release_id          = Column(Integer, nullable=False)
+    server_id           = Column(Integer, nullable=False, primary_key=True)
+    release_id          = Column(Integer, nullable=False, primary_key=True)
     val_date            = Column(DateTime)
     customized_bootstrap = Column(Integer)
     notes               = Column(String)
@@ -29,7 +32,7 @@ class validation(Base):
 class server(Base):
     __tablename__       = 'server'
     id                  = Column(Integer, ForeignKey("validation.server_id"), primary_key=True, nullable=False, autoincrement=True)
-    server_vendor_id    = Column(Integer, nullable=False)
+    server_vendor_id    = Column(Integer, nullable=False, primary_key=True)
     name                = Column(String(128), unique=True)
     notes               = Column(String)
 
@@ -46,24 +49,25 @@ class releases(Base):
 class dev_to_validation(Base):
     __tablename__       = 'dev-to-validation'
     id                  = Column(Integer, primary_key=True, autoincrement=True)
-    validation_id       = Column(Integer, ForeignKey("validation.id"), nullable=False)
-    device_id           = Column(Integer)
+    validation_id       = Column(Integer, ForeignKey("validation.id"), nullable=False, primary_key=True)
+    device_id           = Column(Integer, primary_key=True)
     driver_name         = Column(String(128))
     driver_ver          = Column(String(64))
     is_work             = Column(Boolean)
 
 class device(Base):
     __tablename__       = 'device'
-    id                  = Column(Integer, primary_key=True, autoincrement=True)
-    name                = Column(String(128), ForeignKey("dev-to-validation.device_id"), unique=True, nullable=False)
+    id                  = Column(Integer, ForeignKey("dev-to-validation.device_id"), primary_key=True, autoincrement=True, nullable=False)
+    name                = Column(String(128), unique=True, nullable=False)
     type                = Column(String(64))
     description         = Column(String)
-    device_maker_id     = Column(Integer)
+    device_maker_id     = Column(Integer, primary_key=True)
 
 class device_maker(Base):
     __tablename__       = 'device_maker'
     id                  = Column(Integer, ForeignKey("device.device_maker_id"), primary_key=True, nullable=False, autoincrement=True)
     name                = Column(String(128))
+
 
 
 
