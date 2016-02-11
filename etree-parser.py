@@ -22,58 +22,69 @@ Base = declarative_base()
 
 class Validation(Base):
     __tablename__       = 'validation'
+    __table_args__      = {'mysql_engine':'InnoDB'}
     id                  = Column(Integer, primary_key=True, autoincrement=True)
-    server_id           = Column(Integer, nullable=False, primary_key=True)
+    server_id           = Column(Integer, ForeignKey("server.id"), nullable=False, primary_key=True)
     release_id          = Column(Integer, ForeignKey("releases.id"), nullable=False, primary_key=True)
-    val_date            = Column(DateTime)
+    val_date            = Column(DateTime, nullable=False)
     customized_bootstrap = Column(Integer)
     notes               = Column(String(255))
     release             = relationship("Releases")
     server              = relationship("Server", backref=backref('server'), uselist=True, cascade='delete,all')
-
-class Server(Base):
-    __tablename__       = 'server'
-    id                  = Column(Integer, ForeignKey("validation.server_id"), primary_key=True, nullable=False, autoincrement=True)
-    server_vendor_id    = Column(Integer, ForeignKey("server_vendor.id"), nullable=False, primary_key=True)
-    name                = Column(String(128), unique=True)
-    notes               = Column(String(255))
-    vendor              = relationship("Server_vendor")
-    validation          = relationship("Validation")
+    dtv                 = relationship("Dev_to_validation", backref=backref('dtv'), uselist=True, cascade='delete,all')
 
 class Server_vendor(Base):
     __tablename__       = 'server_vendor'
+    __table_args__      = {'mysql_engine':'InnoDB'}
     id                  = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    name                = Column(String(128), unique=True)
+    name                = Column(String(128), unique=True, nullable=False)
     server              = relationship("Server", backref=backref('servers', uselist=True, cascade='delete,all'))
-
+    
+class Server(Base):
+    __tablename__       = 'server'
+    __table_args__      = {'mysql_engine':'InnoDB'}
+    id                  = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    server_vendor_id    = Column(Integer, ForeignKey("server_vendor.id"), nullable=False, primary_key=True)
+    name                = Column(String(128), unique=True, nullable=False)
+    notes               = Column(String(255))
+    vendor              = relationship("Server_vendor")
+    validation          = relationship("Validation")
+    
 class Releases(Base):
     __tablename__       = 'releases'
+    __table_args__      = {'mysql_engine':'InnoDB'}
     id                  = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    name                = Column(String(64), unique=True)
+    name                = Column(String(64), unique=True, nullable=False)
     validation          = relationship("Validation", backref=backref('validation'), uselist=True, cascade='delete,all')
-
+    
 class Dev_to_validation(Base):
-    __tablename__       = 'dev-to-validation'
+    __tablename__       = 'dev_to_validation'
+    __table_args__      = {'mysql_engine':'InnoDB'}
     id                  = Column(Integer, primary_key=True, autoincrement=True)
     validation_id       = Column(Integer, ForeignKey("validation.id"), nullable=False, primary_key=True)
-    device_id           = Column(Integer, primary_key=True)
-    driver_name         = Column(String(128))
-    driver_ver          = Column(String(64))
+    device_id           = Column(Integer, ForeignKey("device.id"), primary_key=True, nullable=False)
+    driver_name         = Column(String(128), nullable=False)
+    driver_ver          = Column(String(64), nullable=False)
     is_work             = Column(Boolean)
-
+    validation          = relationship("Validation")
+    device              = relationship("Device")
+    
 class Device(Base):
     __tablename__       = 'device'
-    id                  = Column(Integer, ForeignKey("dev-to-validation.device_id"), primary_key=True, autoincrement=True, nullable=False)
+    __table_args__      = {'mysql_engine':'InnoDB'}
+    id                  = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     name                = Column(String(128), unique=True, nullable=False)
-    type                = Column(String(64))
+    type                = Column(String(64), nullable=False)
     description         = Column(String(255))
-    device_maker_id     = Column(Integer, ForeignKey("device_maker.id"), primary_key=True)
+    device_maker_id     = Column(Integer, ForeignKey("device_maker.id"), primary_key=True, nullable=False)
     maker               = relationship("Device_maker")
-
+    dtv                 = relationship("Dev_to_validation")
+    
 class Device_maker(Base):
     __tablename__       = 'device_maker'
+    __table_args__      = {'mysql_engine':'InnoDB'}
     id                  = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    name                = Column(String(128), unique=True)
+    name                = Column(String(128), unique=True, nullable=False)
     device              = relationship("Device", backref=backref('devices', uselist=True, cascade='delete,all'))
 
 Base.metadata.create_all(sql_engine)
