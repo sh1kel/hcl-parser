@@ -148,9 +148,10 @@ if server_name.find('To be filled by') != -1:
 # NICs
 # looking for nodes with class network
 step = 1
+print colored('***** Devices *****', 'blue', attrs=['bold'])
 nics = tree.xpath('/list/node/node[@id="core"]/descendant::node[@class="network"]')
 for nic in nics:
-    print colored("Device #", 'yellow'), colored(step, 'yellow'), colored("found!",'yellow')
+    print colored("Device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
     nic_name = nic.find('product')
     nic_type = nic.find('description')
     nic_vendor = nic.find('vendor')
@@ -166,13 +167,13 @@ for nic in nics:
     except:
         nic_driver_ver = "unknown"
     try:
-        # check if found device is in DB
+        # try to find device in DB
         dev = session.query(Device).filter(Device.name == nic_name.text).one()
         print "Device", colored(dev.name, 'white', attrs=['bold']), colored("[", 'green'), colored(nic_vendor.text, 'green'), colored("]", 'green'), "is already in DB"
     # if there is no that device in DB...
     except:
         try:
-            # check if device's vendor is in DB
+            # try to find device's vendor is in DB
             devmaker = session.query(Device_maker).filter(Device_maker.name == nic_vendor.text).one()
             # if vendor is in DB...
             device_obj = Device(name = nic_name.text, type = 'nic', device_maker_id = devmaker.id)
@@ -195,9 +196,8 @@ for nic in nics:
 # looking for nodes which ids starts from storage and has class storage
 raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id,"storage") and @class="storage"]')
 for raidcnt in raids:
-    print colored("Device #", 'yellow'), colored(step, 'yellow'), colored("found!",'yellow')
+    print colored("Device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
     nic_name = nic.find('product')
-    # if there is no that device in DB...
     nic_name = nic.find('product')
     raid_name = raidcnt.find('product')
     raid_type = raidcnt.find('description')
@@ -213,13 +213,13 @@ for raidcnt in raids:
     except:
         raid_driver_ver = "unknown"
     try:
-        # check if found device is in DB
+        # try to find device is in DB
         dev = session.query(Device).filter(Device.name == raid_name.text).one()
         print "Device", colored(dev.name, 'white', attrs=['bold']), colored("[", 'green'), colored(raid_vendor.text, 'green'), colored("]", 'green'), "is already in DB"
     # if there is no that device in DB...
     except:
         try:
-            # check if device's vendor is in DB
+            # try to find device's vendor is in DB
             devmaker = session.query(Device_maker).filter(Device_maker.name == raid_vendor.text).one()
             # if vendor is in DB...
             device_obj = Device(name = raid_name.text, type = 'raid', device_maker_id = devmaker.id)
@@ -238,12 +238,31 @@ for raidcnt in raids:
     session.commit()
     step = step+1
 
-
-# vendor sql object
-server_vendor_obj = Server_vendor(name=server_vendor_name)
-# server sql object
-server_obj = Server(name = server_name, vendor = server_vendor_obj)
-release_obj = Releases(name = v_fuel)
+print colored('***** Server info *****', 'blue',  attrs=['bold'])
+# try to find server in DB
+try:
+    server = session.query(Server).filter(Server.name == server_name).one()
+    print "Server", colored(server.name, 'white', attrs=['bold']), "already in DB"
+# if there is no that server in DB...
+except:
+    try:
+        # try to find server's vendor is in DB
+        vendor = session.query(Server_vendor).filter(Server_vendor.name == server_vendor_name).one()
+        # if vendor is in DB
+        server_obj = Server(name = server_name, server_vendor_id = vendor.id)
+        print "Server vendor", colored(server_vendor_obj.name, 'green', attrs=['bold']), "already in DB"
+        print "Adding server", colored(server_obj.name, 'white', attrs=['bold']), " to DB"
+        session.add(server_obj)
+    except:
+        # if vendor is not in DB
+        print "Server vendor", colored(server_vendor_name, 'green', attrs=['bold']), "is not in DB..."
+        server_vendor_obj = Server_vendor(name=server_vendor_name)
+        server_obj = Server(name = server_name, vendor = server_vendor_obj)
+        session.add(server_vendor_obj)
+        session.add(server_obj)
+        print "Adding server vendor", colored(server_vendor_obj.name, 'green'), "to DB"
+        print "Adding server", colored(server_obj.name, 'white', attrs=['bold']), " to DB"
+session.commit()
 
 #session.add(server_vendor_obj)
 #session.add(server_obj)
