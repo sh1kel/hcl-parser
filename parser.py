@@ -264,6 +264,14 @@ except:
         print "Adding server", colored(server_obj.name, 'white', attrs=['bold']), " to DB"
 session.commit()
 
-#session.add(server_vendor_obj)
-#session.add(server_obj)
-#session.commit()
+# add release info to DB
+try:
+    release = session.query(Releases).filter(Releases.name == v_fuel).one()
+    print "Release", colored(release.name, 'white', attrs=['bold']), "already in DB"
+except:
+    release_obj = Releases(name = v_fuel)
+    session.add(release_obj)
+    session.commit
+
+
+
