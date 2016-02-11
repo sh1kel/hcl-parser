@@ -1,4 +1,5 @@
-from lxml import etree                                                                                                                                                              [200/1926]
+#!/usr/local/bin/python2.7
+from lxml import etree
 import sys
 from sqlalchemy import create_engine, Table, MetaData, orm, Integer, ForeignKey, Column, String, DateTime, Boolean
 from sqlalchemy.orm import sessionmaker, relationship, backref
@@ -55,7 +56,7 @@ class Releases(Base):
     name                = Column(String(64), unique=True, nullable=False)
     validation          = relationship("Validation", backref=backref('validation'), uselist=True, cascade='delete,all')
 
-class Dev_to_validation(Base):                                                                                                                                                      [141/1926]
+class Dev_to_validation(Base):
     __tablename__       = 'dev_to_validation'
     __table_args__      = {'mysql_engine':'InnoDB'}
     id                  = Column(Integer, primary_key=True, autoincrement=True)
@@ -95,8 +96,7 @@ if len(sys.argv) < 2:
 
 print "Parsing ", sys.argv[1]
 document = sys.argv[1]
-
-# try to open report file                                                                                                                                                            [82/1926]
+# try to open report file
 try:
     xml_report = open(document, 'r')
 except IOError as e:
@@ -120,7 +120,7 @@ for line in xml_report:
         continue
     if line.strip().startswith('<') and line.strip() != '</list>':      # xml
         xml_line += line                    # add xml lines to str
-        if line.strip() == '</list>':           # xml ends
+    if line.strip() == '</list>':           # xml ends
         xml_line += line
         break
 
@@ -144,7 +144,7 @@ if server_name.find('To be filled by') != -1:
     server_name = server_name.split('(')[0]
     server_name = server_name.rstrip()
 
-#validation_obj = validation                                                                                                                                                         [34/1926]
+#validation_obj = validation
 # NICs
 # looking for nodes with class network
 step = 1
@@ -194,12 +194,12 @@ for nic in nics:
 # RAIDs
 # looking for nodes which ids starts from storage and has class storage
 raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id,"storage") and @class="storage"]')
-    for raidcnt in raids:
-        raid_name = raidcnt.find('product')
-        raid_type = raidcnt.find('description')
-        raid_vendor = raidcnt.find('vendor')
-        raid_driver_name_obj = raidcnt.find('configuration/setting[@id="driver"]')
-        raid_driver_ver_obj = raidcnt.find('configuration/setting[@id="driverversion"]')
+for raidcnt in raids:
+    raid_name = raidcnt.find('product')
+    raid_type = raidcnt.find('description')
+    raid_vendor = raidcnt.find('vendor')
+    raid_driver_name_obj = raidcnt.find('configuration/setting[@id="driver"]')
+    raid_driver_ver_obj = raidcnt.find('configuration/setting[@id="driverversion"]')
     try:
         raid_driver_name = raid_driver_name_obj.get('value')
     except:
