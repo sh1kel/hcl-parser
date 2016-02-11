@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, Table, MetaData, orm, Integer, ForeignKey,
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from termcolor import colored
+from datetime import datetime
 
 # db credentials
 db_user = 'root'
@@ -241,8 +242,8 @@ for raidcnt in raids:
 print colored('***** Server info *****', 'blue',  attrs=['bold'])
 # try to find server in DB
 try:
-    server = session.query(Server).filter(Server.name == server_name).one()
-    print "Server", colored(server.name, 'white', attrs=['bold']), "already in DB"
+    server_obj = session.query(Server).filter(Server.name == server_name).one()
+    print "Server", colored(server_obj.name, 'white', attrs=['bold']), "already in DB"
 # if there is no that server in DB...
 except:
     try:
@@ -266,12 +267,25 @@ session.commit()
 
 # add release info to DB
 try:
-    release = session.query(Releases).filter(Releases.name == v_fuel).one()
-    print "Release", colored(release.name, 'white', attrs=['bold']), "already in DB"
+    release_obj = session.query(Releases).filter(Releases.name == v_fuel).one()
+    print "Release", colored(release_obj.name, 'white', attrs=['bold']), "already in DB"
 except:
     release_obj = Releases(name = v_fuel)
     session.add(release_obj)
-    session.commit
+    print "Adding release", colored(release_obj.name, 'white', attrs=['bold']), " to DB"
+    session.commit()
 
-
-
+# validation 
+dt = datetime.strptime(v_date, "%d %b %Y %I:%M")
+'''
+if server:
+    if release:
+        validation_obj = Validation(server_id = server.id, release_id = release.id, val_date = dt)
+    else:
+        validation_obj = Validation(server_id = server.id, release_id = release_obj.id, val_date = dt)
+'''
+print "Server obj", server_obj.id
+print "Release obj", release_obj.id
+validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
+session.add(validation_obj)
+session.commit()
