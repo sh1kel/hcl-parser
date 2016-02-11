@@ -4,7 +4,7 @@ import sys
 from sqlalchemy import create_engine, Table, MetaData, orm, Integer, ForeignKey, Column, String, DateTime, Boolean
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
-
+from termcolor import colored
 
 # db credentials
 db_user = 'root'
@@ -94,7 +94,7 @@ if len(sys.argv) < 2:
     print sys.argv[0], " hw_report_filename.txt"
     exit(0)
 
-print "Parsing ", sys.argv[1]
+print colored("Parsing ", 'cyan'), sys.argv[1]
 document = sys.argv[1]
 # try to open report file
 try:
@@ -150,7 +150,7 @@ if server_name.find('To be filled by') != -1:
 step = 1
 nics = tree.xpath('/list/node/node[@id="core"]/descendant::node[@class="network"]')
 for nic in nics:
-    print "Device #", step, "found!"
+    print colored("Device #", 'yellow'), colored(step, 'yellow'), colored("found!",'yellow')
     nic_name = nic.find('product')
     nic_type = nic.find('description')
     nic_vendor = nic.find('vendor')
@@ -168,7 +168,7 @@ for nic in nics:
     try:
         # check if found device is in DB
         dev = session.query(Device).filter(Device.name == nic_name.text).one()
-        print "Device", dev.name, "already in DB"
+        print "Device", colored(dev.name, 'white', attrs=['bold']), colored("[", 'green'), colored(nic_vendor.text, 'green'), colored("]", 'green'), "is already in DB"
     # if there is no that device in DB...
     except:
         try:
@@ -177,17 +177,17 @@ for nic in nics:
             # if vendor is in DB...
             device_obj = Device(name = nic_name.text, type = 'nic', device_maker_id = devmaker.id)
             session.add(device_obj)
-            print "Vendor", devmaker.name, "already in DB"
-            print "Adding device", device_obj.name, " to DB"
+            print "Vendor", colored(devmaker.name, 'green'), "already in DB"
+            print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
         except:
             # if vendor is not in DB...
-            print "Vendor", nic_vendor.text, "is not in DB..."
+            print "Vendor", colored(nic_vendor.text, 'green'), "is not in DB..."
             device_maker_obj = Device_maker(name = nic_vendor.text)
             device_obj = Device(name = nic_name.text, type = 'nic', maker = device_maker_obj)
             session.add(device_maker_obj)
             session.add(device_obj)
-            print "Adding vendor", device_maker_obj.name, "to DB"
-            print "Adding device", device_obj.name, " to DB"
+            print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
+            print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
     session.commit()
     step = step+1
 
@@ -195,6 +195,10 @@ for nic in nics:
 # looking for nodes which ids starts from storage and has class storage
 raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id,"storage") and @class="storage"]')
 for raidcnt in raids:
+    print colored("Device #", 'yellow'), colored(step, 'yellow'), colored("found!",'yellow')
+    nic_name = nic.find('product')
+    # if there is no that device in DB...
+    nic_name = nic.find('product')
     raid_name = raidcnt.find('product')
     raid_type = raidcnt.find('description')
     raid_vendor = raidcnt.find('vendor')
@@ -208,11 +212,10 @@ for raidcnt in raids:
         raid_driver_ver = raid_driver_ver_obj.get('value')
     except:
         raid_driver_ver = "unknown"
-
     try:
         # check if found device is in DB
         dev = session.query(Device).filter(Device.name == raid_name.text).one()
-        print "Device", dev.name, "already in DB"
+        print "Device", colored(dev.name, 'white', attrs=['bold']), colored("[", 'green'), colored(raid_vendor.text, 'green'), colored("]", 'green'), "is already in DB"
     # if there is no that device in DB...
     except:
         try:
@@ -221,17 +224,17 @@ for raidcnt in raids:
             # if vendor is in DB...
             device_obj = Device(name = raid_name.text, type = 'raid', device_maker_id = devmaker.id)
             session.add(device_obj)
-            print "Vendor", devmaker.name, "already in DB"
-            print "Adding device", device_obj.name, " to DB"
+            print "Vendor", colored(devmaker.name, 'green'), "already in DB"
+            print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
         except:
             # if vendor is not in DB...
-            print "Vendor", raid_vendor.text, "is not in DB..."
+            print "Vendor", colored(raid_vendor.text, 'green'), "is not in DB..."
             device_maker_obj = Device_maker(name = raid_vendor.text)
             device_obj = Device(name = raid_name.text, type = 'raid', maker = device_maker_obj)
             session.add(device_maker_obj)
             session.add(device_obj)
-            print "Adding vendor", device_maker_obj.name, "to DB"
-            print "Adding device", device_obj.name, " to DB"
+            print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
+            print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
     session.commit()
     step = step+1
 
