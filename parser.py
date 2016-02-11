@@ -209,6 +209,33 @@ raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id
     except:
         raid_driver_ver = "unknown"
 
+    try:
+        # check if found device is in DB
+        dev = session.query(Device).filter(Device.name == raid_name.text).one()
+        print "Device", dev.name, "already in DB"
+    # if there is no that device in DB...
+    except:
+        try:
+            # check if device's vendor is in DB
+            devmaker = session.query(Device_maker).filter(Device_maker.name == raid_vendor.text).one()
+            # if vendor is in DB...
+            device_obj = Device(name = raid_name.text, type = 'raid', device_maker_id = devmaker.id)
+            session.add(device_obj)
+            print "Vendor", devmaker.name, "already in DB"
+            print "Adding device", device_obj.name, " to DB"
+        except:
+            # if vendor is not in DB...
+            print "Vendor", raid_vendor.text, "is not in DB..."
+            device_maker_obj = Device_maker(name = raid_vendor.text)
+            device_obj = Device(name = raid_name.text, type = 'raid', maker = device_maker_obj)
+            session.add(device_maker_obj)
+            session.add(device_obj)
+            print "Adding vendor", device_maker_obj.name, "to DB"
+            print "Adding device", device_obj.name, " to DB"
+    session.commit()
+    step = step+1
+
+
 # vendor sql object
 server_vendor_obj = Server_vendor(name=server_vendor_name)
 # server sql object
