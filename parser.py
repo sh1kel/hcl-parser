@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.7
+#!/usr/bin/python
 from lxml import etree
 import sys
 from sqlalchemy import create_engine, Table, MetaData, orm, Integer, ForeignKey, Column, String, DateTime, Boolean
@@ -10,7 +10,7 @@ from datetime import datetime
 # db credentials
 db_user = 'root'
 db_pass = '123'
-db_host = 'localhost'
+db_host = '192.168.27.10'
 db_name = 'hcl_test'
 
 xml_line = ''
@@ -189,11 +189,11 @@ except:
     session.commit()
 
 # validation
-try:
-    dt = datetime.strptime(v_date, "%d %b %Y %I:%M")
-except:
-    curtime = datetime.now()
-    dt = datetime.strftime(dt, "%d %b %Y %I:%M")
+#try:
+dt = datetime.strptime(v_date, "%d %b %Y %H:%M")
+#except:
+#    curdt = datetime.now()
+#    dt = datetime.strftime(curdt, "%d %b %Y %I:%M")
 
 '''
 if server:
@@ -241,15 +241,17 @@ for nic in nics:
             session.add(device_obj)
             print "Vendor", colored(devmaker.name, 'green'), "already in DB"
             print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+            session.commit()
         except:
             # if vendor is not in DB...
             print "Vendor", colored(nic_vendor.text, 'green'), "is not in DB..."
             device_maker_obj = Device_maker(name = nic_vendor.text)
             device_obj = Device(name = nic_name.text, type = 'nic', maker = device_maker_obj)
-            session.add(device_maker_obj)
-            session.add(device_obj)
             print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
             print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+            session.add(device_maker_obj)
+            session.add(device_obj)
+            session.commit()
     dev_to_val_obj = Dev_to_validation(validation = validation_obj, device_id = device_obj.id, driver_name = nic_driver_name, driver_ver =  nic_driver_ver)
     session.add(dev_to_val_obj)
     session.commit()
@@ -260,8 +262,6 @@ for nic in nics:
 raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id,"storage") and @class="storage"]')
 for raidcnt in raids:
     print colored("Device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
-    nic_name = nic.find('product')
-    nic_name = nic.find('product')
     raid_name = raidcnt.find('product')
     raid_type = raidcnt.find('description')
     raid_vendor = raidcnt.find('vendor')
@@ -289,15 +289,17 @@ for raidcnt in raids:
             session.add(device_obj)
             print "Vendor", colored(devmaker.name, 'green'), "already in DB"
             print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+            session.commit()
         except:
             # if vendor is not in DB...
             print "Vendor", colored(raid_vendor.text, 'green'), "is not in DB..."
             device_maker_obj = Device_maker(name = raid_vendor.text)
             device_obj = Device(name = raid_name.text, type = 'raid', maker = device_maker_obj)
-            session.add(device_maker_obj)
-            session.add(device_obj)
             print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
             print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+            session.add(device_maker_obj)
+            session.add(device_obj)
+            session.commit()
     dev_to_val_obj = Dev_to_validation(validation = validation_obj, device_id = device_obj.id, driver_name = raid_driver_name, driver_ver =  raid_driver_ver)
     session.add(dev_to_val_obj)
     session.commit()
