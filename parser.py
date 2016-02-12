@@ -104,6 +104,10 @@ except IOError as e:
     print "I/O error({0}): {1}".format(e.errno, e.strerror)
     exit(1)
 
+
+# if Fuel version is absent (for old reports)
+v_fuel = 'unknown'
+
 # parsing
 for line in xml_report:
     if line.startswith('Date:'):            # Date field
@@ -124,10 +128,6 @@ for line in xml_report:
     if line.strip() == '</list>':           # xml ends
         xml_line += line
         break
-
-# for old reports without Fuel version
-if not v_fuel:
-    v_fuel = 'unknown'
 
 
 if len(xml_line.strip()) > 0:               # if xml String size not null
