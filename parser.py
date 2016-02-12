@@ -9,7 +9,7 @@ from datetime import datetime
 
 # db credentials
 db_user = 'root'
-db_pass = 'Admin112'
+db_pass = '123'
 db_host = 'localhost'
 db_name = 'hcl_test'
 
