@@ -114,7 +114,7 @@ for line in xml_report:
     if line.startswith('Fuel version'):
         line.strip()
         twodots = line.find(':')
-        v_fuel =  line[twodots+1:].strip()
+        v_fuel = line[twodots+1:].strip()
         continue
     if line.startswith('<?xml'):            # search for starting of xml
         xml_line = line
@@ -125,6 +125,9 @@ for line in xml_report:
         xml_line += line
         break
 
+# for old reports without Fuel version
+if not v_fuel:
+    v_fuel = 'unknown'
 
 
 if len(xml_line.strip()) > 0:               # if xml String size not null
@@ -185,8 +188,13 @@ except:
     print "Adding release", colored(release_obj.name, 'white', attrs=['bold']), " to DB"
     session.commit()
 
-# validation 
-dt = datetime.strptime(v_date, "%d %b %Y %I:%M")
+# validation
+try:
+    dt = datetime.strptime(v_date, "%d %b %Y %I:%M")
+except:
+    curtime = datetime.now()
+    dt = datetime.strftime(dt, "%d %b %Y %I:%M")
+
 '''
 if server:
     if release:
