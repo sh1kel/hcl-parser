@@ -161,9 +161,9 @@ try:
 except:
     try:
         # try to find server's vendor is in DB
-        vendor = session.query(Server_vendor).filter(Server_vendor.name == server_vendor_name).one()
+        server_vendor_obj = session.query(Server_vendor).filter(Server_vendor.name == server_vendor_name).one()
         # if vendor is in DB
-        server_obj = Server(name = server_name, server_vendor_id = vendor.id)
+        server_obj = Server(name = server_name, server_vendor_id = server_vendor_obj.id)
         print "Server vendor", colored(server_vendor_obj.name, 'green', attrs=['bold']), "already in DB"
         print "Adding server", colored(server_obj.name, 'white', attrs=['bold']), " to DB"
         session.add(server_obj)
