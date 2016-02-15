@@ -13,6 +13,8 @@ db_pass = '123'
 db_host = '192.168.27.10'
 db_name = 'hcl_test'
 
+DATE_FORMATS = ['%Y-%m-%d %H:%M:%S.%f', '%d %b %Y %H:%M', '%Y-%m-%d %H:%M']
+
 xml_line = ''
 sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name) #, echo=True)
 Session = sessionmaker(bind=sql_engine)
@@ -189,11 +191,12 @@ except:
     session.commit()
 
 # validation
-#try:
-dt = datetime.strptime(v_date, "%d %b %Y %H:%M")
-#except:
-#    curdt = datetime.now()
-#    dt = datetime.strftime(curdt, "%d %b %Y %I:%M")
+for date_format in DATE_FORMATS:
+    try:
+        dt = datetime.strptime(v_date, date_format) 
+        dt = dt.strftime('%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        pass
 
 validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
 session.add(validation_obj)

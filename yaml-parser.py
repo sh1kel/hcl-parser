@@ -14,6 +14,7 @@ db_host = '192.168.27.10'
 db_name = 'hcl_test'
 
 val_list = []
+DATE_FORMATS = ['%Y-%m-%d %H:%M:%S.%f', '%d %b %Y %H:%M', '%Y-%m-%d %H:%M']
 
 sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name) #, echo=True)
 Session = sessionmaker(bind=sql_engine)
@@ -107,7 +108,6 @@ except IOError as e:
 
 try:
     server_info = yaml.load(yaml_report)
-    print colored("Parsing ", 'cyan'), sys.argv[1]
 except:
     print sys.argv[1], colored("is not YAML format", 'red')
     exit(1)
@@ -158,13 +158,14 @@ for cert in server_info['certification']:
         session.add(release_obj)
         print "Adding release", colored(release_obj.name, 'white', attrs=['bold']), " to DB"
         session.commit()
-    try:
-        dt = datetime.strptime(cert['date'], '%Y-%m-%d %H:%M:%S.%f')
-        dt = dt.strftime('%d %b %Y %H:%M')
-    except:
-        dt = datetime.strptime(cert['date'], '%d %b %Y %H:%M')
-        dt = dt.strftime('%d %b %Y %H:%M')
-    if cert['status'] == 'Passed':    
+    for date_format in DATE_FORMATS:
+        try:
+            dt = datetime.strptime(cert['date'], date_format) 
+            dt = dt.strftime('%Y-%m-%d %H:%M:%S')
+            print dt
+        except ValueError:
+            pass
+    if 'status' in cert and cert['status'] == 'Passed':    
         validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
         val_list.append(validation_obj)
         session.add(validation_obj)
