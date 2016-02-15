@@ -8,6 +8,7 @@ from termcolor import colored
 from datetime import datetime
 
 # db credentials
+
 db_user = 'root'
 db_pass = '123'
 db_host = '192.168.27.10'
@@ -164,11 +165,11 @@ for cert in server_info['certification']:
             dt = dt.strftime('%Y-%m-%d %H:%M:%S')
         except ValueError:
             pass
-    if 'status' in cert and cert['status'] == 'Passed':    
-        validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
-        val_list.append(validation_obj)
-        session.add(validation_obj)
-        session.commit()
+    #if 'status' in cert and cert['status'] == 'Passed':    
+    validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
+    val_list.append(validation_obj)
+    session.add(validation_obj)
+    session.commit()
 
 # Hardware info
 step = 1
@@ -197,7 +198,7 @@ for hw in server_info['components']:
             # if vendor is not in DB...
             print "Vendor", colored(device_vendor, 'green'), "is not in DB..."
             device_maker_obj = Device_maker(name = device_vendor)
-            device_obj = Device(name = device_name, type = device_vendor, maker = device_maker_obj)
+            device_obj = Device(name = device_name, type = device_type, maker = device_maker_obj)
             print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
             print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
             session.add(device_maker_obj)
