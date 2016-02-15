@@ -1,0 +1,51 @@
+tags: [ "Mirantis hardware" ]
+server:
+    name: "Supermicro SuperServer 6028R-WTR"
+    vendor: "Supermicro"
+    specification_url: "http://www.supermicro.com/products/system/2U/6028/SYS-6028R-WTR.cfm"
+    comments: "Server ss1691 for non-standard equipment"
+    availability: [ "Mirantis / Mirantis Lab" ]
+
+components:
+  - name: "Intel i350 Dual port"
+    vendor: "Intel"
+    type: "nic"
+    hw_id: "8086:1521"
+    driver:
+        name: "igb"
+        version: "5.2.15"
+  - name: "Intel C612"
+    vendor: "Intel"
+    type: "chipset"
+    hw_id: ""
+    driver:
+        name: "unknown"
+        version: "unknown"
+  - name: "LSI Logic / Symbios Logic MegaRAID SAS 2108 [Liberator]"
+    vendor: "lsi"
+    type: "raid"
+    hw_id: "1000:0079"
+    driver:
+        name: "megaraid_sas"
+        version: "06.803.01.00-rh1"
+  - name: "LSI Logic / Symbios Logic MegaRAID SAS 2208 [Thunderbolt]"
+    vendor: "lsi"
+    type: "raid"
+    hw_id: "1000:005b"
+    driver:
+        name: "megaraid_sas"
+        version: "06.803.01.00-rh1"
+
+certification:
+  - date: "2015-05-19 17:44:52.664956"
+    comments: ""
+    status: "passed"
+    fuel_version: "6.0.1"
+  - date: "2015-05-29 10:45:52.664956"
+    comments: ""
+    status: "passed"
+    fuel_version: "6.1"
+  - date: "2015-08-25 20:17:52.664956"
+    comments: ""
+    status: "passed"
+    fuel_version: "7.0"
