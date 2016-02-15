@@ -195,13 +195,6 @@ dt = datetime.strptime(v_date, "%d %b %Y %H:%M")
 #    curdt = datetime.now()
 #    dt = datetime.strftime(curdt, "%d %b %Y %I:%M")
 
-'''
-if server:
-    if release:
-        validation_obj = Validation(server_id = server.id, release_id = release.id, val_date = dt)
-    else:
-        validation_obj = Validation(server_id = server.id, release_id = release_obj.id, val_date = dt)
-'''
 validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
 session.add(validation_obj)
 session.commit()
