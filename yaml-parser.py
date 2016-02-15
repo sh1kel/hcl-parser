@@ -162,7 +162,6 @@ for cert in server_info['certification']:
         try:
             dt = datetime.strptime(cert['date'], date_format) 
             dt = dt.strftime('%Y-%m-%d %H:%M:%S')
-            print dt
         except ValueError:
             pass
     if 'status' in cert and cert['status'] == 'Passed':    
