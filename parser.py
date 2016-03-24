@@ -10,7 +10,7 @@ from datetime import datetime
 # db credentials
 db_user = 'root'
 db_pass = '123'
-db_host = '192.168.27.10'
+db_host = '10.0.2.4'
 db_name = 'hcl_test'
 
 DATE_FORMATS = ['%Y-%m-%d %H:%M:%S.%f', '%d %b %Y %H:%M', '%Y-%m-%d %H:%M']
@@ -29,8 +29,8 @@ class Validation(Base):
     server_id           = Column(Integer, ForeignKey("server.id"), nullable=False, primary_key=True)
     release_id          = Column(Integer, ForeignKey("releases.id"), nullable=False, primary_key=True)
     val_date            = Column(DateTime, nullable=False)
-    customized_bootstrap = Column(Integer)
-    notes               = Column(String(255))
+    result              = Column(Enum('passed','partially passed','failed'))
+    notes               = Column(String(4000))
     release             = relationship("Releases")
     server              = relationship("Server", backref=backref('server'), uselist=True, cascade='delete,all')
     dtv                 = relationship("Dev_to_validation", backref=backref('dtv'), uselist=True, cascade='delete,all')
