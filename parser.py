@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from lxml import etree
 import sys
-from sqlalchemy import create_engine, Table, MetaData, orm, Integer, ForeignKey, Column, String, DateTime, Boolean
+from sqlalchemy import create_engine, Table, MetaData, orm, Integer, ForeignKey, Column, String, DateTime, Boolean, Enum
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from termcolor import colored
@@ -198,7 +198,7 @@ for date_format in DATE_FORMATS:
     except ValueError:
         pass
 
-validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
+validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt, result = 'passed')
 session.add(validation_obj)
 session.commit()
 
