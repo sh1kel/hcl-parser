@@ -1,14 +1,13 @@
 #!/usr/bin/python
 import yaml
 import sys
-from sqlalchemy import create_engine, Table, MetaData, orm, Integer, ForeignKey, Column, String, DateTime, Boolean
+from sqlalchemy import create_engine, Table, MetaData, orm, Integer, ForeignKey, Column, String, DateTime, Boolean, Enum
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from termcolor import colored
 from datetime import datetime
 
 # db credentials
-
 db_user = 'root'
 db_pass = '123'
 db_host = '192.168.27.10'
