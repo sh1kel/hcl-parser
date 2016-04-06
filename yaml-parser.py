@@ -165,7 +165,7 @@ for cert in server_info['certification']:
         except ValueError:
             pass
     #if 'status' in cert and cert['status'] == 'Passed':    
-    validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
+    validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt, result = 'passed')
     val_list.append(validation_obj)
     session.add(validation_obj)
     session.commit()
