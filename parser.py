@@ -198,7 +198,7 @@ for date_format in DATE_FORMATS:
     except ValueError:
         pass
 
-validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt)
+validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt, result = 'passed')
 session.add(validation_obj)
 session.commit()
 
