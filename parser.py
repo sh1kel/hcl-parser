@@ -8,9 +8,9 @@ from termcolor import colored
 from datetime import datetime
 
 # db credentials
-db_user = 'root'
-db_pass = '123'
-db_host = '10.0.2.4'
+db_user = 'hcluser'
+db_pass = 'hclpass'
+db_host = '127.0.0.1'
 db_name = 'hcl_test'
 
 DATE_FORMATS = ['%Y-%m-%d %H:%M:%S.%f', '%d %b %Y %H:%M', '%Y-%m-%d %H:%M']
@@ -202,6 +202,8 @@ validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.
 session.add(validation_obj)
 session.commit()
 
+val_id = validation_obj.id
+
 # NICs
 # looking for nodes with class network
 step = 1
@@ -300,4 +302,17 @@ for raidcnt in raids:
     session.add(dev_to_val_obj)
     session.commit()
     step = step+1
+
+while True:
+    is_correct = raw_input('Is it correct [Ja/Nicht]: ')
+    if is_correct == "j":
+        print 'Oh, ja! - Das ist fantastisch!'
+        exit(0)
+    elif is_correct == "n":
+        print 'Nicht Validaten!'
+        session.query(Validation).filter(Validation.id == val_id).update({'result': 'failed'})
+        session.commit()
+        exit(0)
+    else:
+        print "Vvoditen J or N! Schneller!"
 

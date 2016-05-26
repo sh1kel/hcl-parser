@@ -8,9 +8,9 @@ from termcolor import colored
 from datetime import datetime
 
 # db credentials
-db_user = 'root'
-db_pass = '123'
-db_host = '192.168.27.10'
+db_user = 'hcluser'
+db_pass = 'hclpass'
+db_host = '127.0.0.1'
 db_name = 'hcl_test'
 
 val_list = []
