@@ -11,8 +11,8 @@
 `easy_install-a.b pip`
 2. lxml requires libxml2 and libxslt installed. Installation depends on OS
 3. python modules installation
-`apt-get install xslt-config`
-`pip install sqlalchemy termcolor lxml datetime`
+`apt-get install xslt-config;`
+` pip install sqlalchemy termcolor lxml datetime`
 
 ## Parser
 `parser.py HW_report_file`
