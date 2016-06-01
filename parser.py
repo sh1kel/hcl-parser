@@ -13,12 +13,11 @@ db_pass = 'hclpass'
 db_host = '127.0.0.1'
 db_name = 'hcl_test'
 
-DATE_FORMATS = ['%Y-%m-%d %H:%M:%S.%f', '%d %b %Y %H:%M', '%Y-%m-%d %H:%M']
 
 xml_line = []
-#sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name) #, echo=True)
-#Session = sessionmaker(bind=sql_engine)
-#session = Session()
+sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name) #, echo=True)
+Session = sessionmaker(bind=sql_engine)
+session_ex = Session()
 # DB prepare
 Base = declarative_base()
 
@@ -90,7 +89,211 @@ class Device_maker(Base):
     name                = Column(String(128), unique=True, nullable=False)
     device              = relationship("Device", backref=backref('devices', uselist=True, cascade='delete,all'))
 
-#Base.metadata.create_all(sql_engine)
+Base.metadata.create_all(sql_engine)
+
+
+
+# ************************* server info func *************************
+def insert_server_info(session, server_name, server_vendor_name):
+    print colored('***** Server info *****', 'blue',  attrs=['bold'])
+    # try to find server in DB
+    try:
+        server_obj = session.query(Server).filter(Server.name == server_name).one()
+        print "Server", colored(server_obj.name, 'white', attrs=['bold']), "already in DB"
+    # if there is no that server in DB...
+    except:
+        try:
+            # try to find server's vendor is in DB
+            server_vendor_obj = session.query(Server_vendor).filter(Server_vendor.name == server_vendor_name).one()
+            # if vendor is in DB
+            server_obj = Server(name = server_name, server_vendor_id = server_vendor_obj.id)
+            print "Server vendor", colored(server_vendor_obj.name, 'green', attrs=['bold']), "already in DB"
+            print "Adding server", colored(server_obj.name, 'white', attrs=['bold']), " to DB"
+            session.add(server_obj)
+        except:
+            # if vendor is not in DB
+            print "Server vendor", colored(server_vendor_name, 'green', attrs=['bold']), "is not in DB..."
+            server_vendor_obj = Server_vendor(name=server_vendor_name)
+            server_obj = Server(name = server_name, vendor = server_vendor_obj)
+            session.add(server_vendor_obj)
+            session.add(server_obj)
+            print "Adding server vendor", colored(server_vendor_obj.name, 'green'), "to DB"
+            print "Adding server", colored(server_obj.name, 'white', attrs=['bold']), " to DB"
+    session.commit()
+    return server_obj.id
+
+
+# ************************* release info func *************************
+def insert_release_info(session, v_fuel):
+    # add release info to DB
+    try:
+        release_obj = session.query(Releases).filter(Releases.name == v_fuel).one()
+        print "Release", colored(release_obj.name, 'white', attrs=['bold']), "already in DB"
+    except:
+        release_obj = Releases(name = v_fuel)
+        session.add(release_obj)
+        print "Adding release", colored(release_obj.name, 'white', attrs=['bold']), " to DB"
+        session.commit()
+    return release_obj.id
+
+# ************************* validation info func *************************
+def insert_validation_info(session, serverid, releaseid, validation_date, result_value):
+
+    DATE_FORMATS = ['%Y-%m-%d %H:%M:%S.%f', '%d %b %Y %H:%M', '%Y-%m-%d %H:%M']
+    # validation
+    for date_format in DATE_FORMATS:
+        try:
+            dt = datetime.strptime(validation_date, date_format) 
+            dt = dt.strftime('%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            pass
+    validation_obj = Validation(server_id = serverid, release_id = releaseid, val_date = dt, result = result_value)
+    session.add(validation_obj)
+    session.commit()
+    return validation_obj.id
+
+# ************************* nic info func *************************
+def insert_nic_info(session, tree, validationid):
+    # NICs
+    # looking for nodes with class network
+    step = 1
+    print colored('***** Devices *****', 'blue', attrs=['bold'])
+    nics = tree.xpath('/list/node/node[@id="core"]/descendant::node[@class="network"]')
+    for nic in nics:
+        print colored("NIC device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
+        nic_name = nic.find('product')
+        nic_type = nic.find('description')
+        nic_vendor = nic.find('vendor')
+        # lookging for subvalues with drivers info
+        nic_driver_name_obj = nic.find('configuration/setting[@id="driver"]')
+        nic_driver_ver_obj = nic.find('configuration/setting[@id="driverversion"]')
+        try:
+            nic_driver_name = nic_driver_name_obj.get('value')
+        except:
+            nic_driver_name = "unknown"
+        try:
+            nic_driver_ver = nic_driver_ver_obj.get('value')
+        except:
+            nic_driver_ver = "unknown"
+        try:
+            # try to find device in DB
+            device_obj = session.query(Device).filter(Device.name == nic_name.text).one()
+            print "Device", colored(device_obj.name, 'white', attrs=['bold']), colored("[", 'green'), colored(nic_vendor.text, 'green'), colored("]", 'green'), "is already in DB"
+        # if there is no that device in DB...
+        except:
+            try:
+                # try to find device's vendor is in DB
+                devmaker = session.query(Device_maker).filter(Device_maker.name == nic_vendor.text).one()
+                # if vendor is in DB...
+                device_obj = Device(name = nic_name.text, type = 'nic', device_maker_id = devmaker.id)
+                session.add(device_obj)
+                print "Vendor", colored(devmaker.name, 'green'), "already in DB"
+                print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+                session.commit()
+            except:
+                # if vendor is not in DB...
+                print "Vendor", colored(nic_vendor.text, 'green'), "is not in DB..."
+                device_maker_obj = Device_maker(name = nic_vendor.text)
+                device_obj = Device(name = nic_name.text, type = 'nic', maker = device_maker_obj)
+                print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
+                print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+                session.add(device_maker_obj)
+                session.add(device_obj)
+                session.commit()
+        dev_to_val_obj = Dev_to_validation(validation_id = validationid, device_id = device_obj.id, driver_name = nic_driver_name, driver_ver =  nic_driver_ver)
+        session.add(dev_to_val_obj)
+        session.commit()
+        step = step+1
+    return
+
+# ************************* raid info func *************************
+def insert_raid_info(session, tree, validationid):
+    # RAIDs
+    # looking for nodes which ids starts from storage and has class storage
+    step = 1
+    raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id,"storage") and @class="storage"]')
+    for raidcnt in raids:
+        print colored("RAID device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
+        raid_name = raidcnt.find('product')
+        raid_type = raidcnt.find('description')
+        raid_vendor = raidcnt.find('vendor')
+        raid_driver_name_obj = raidcnt.find('configuration/setting[@id="driver"]')
+        raid_driver_ver_obj = raidcnt.find('configuration/setting[@id="driverversion"]')
+        try:
+            raid_driver_name = raid_driver_name_obj.get('value')
+        except:
+            raid_driver_name = "unknown"
+        try:
+            raid_driver_ver = raid_driver_ver_obj.get('value')
+        except:
+            raid_driver_ver = "unknown"
+        try:
+            # try to find device is in DB
+            device_obj = session.query(Device).filter(Device.name == raid_name.text).one()
+            print "Device", colored(device_obj.name, 'white', attrs=['bold']), colored("[", 'green'), colored(raid_vendor.text, 'green'), colored("]", 'green'), "is already in DB"
+        # if there is no that device in DB...
+        except:
+            try:
+                # try to find device's vendor is in DB
+                devmaker = session.query(Device_maker).filter(Device_maker.name == raid_vendor.text).one()
+                # if vendor is in DB...
+                device_obj = Device(name = raid_name.text, type = 'raid', device_maker_id = devmaker.id)
+                session.add(device_obj)
+                print "Vendor", colored(devmaker.name, 'green'), "already in DB"
+                print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+                session.commit()
+            except:
+                # if vendor is not in DB...
+                print "Vendor", colored(raid_vendor.text, 'green'), "is not in DB..."
+                device_maker_obj = Device_maker(name = raid_vendor.text)
+                device_obj = Device(name = raid_name.text, type = 'raid', maker = device_maker_obj)
+                print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
+                print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+                session.add(device_maker_obj)
+                session.add(device_obj)
+                session.commit()
+        dev_to_val_obj = Dev_to_validation(validation_id = validationid, device_id = device_obj.id, driver_name = raid_driver_name, driver_ver =  raid_driver_ver)
+        session.add(dev_to_val_obj)
+        session.commit()
+        step = step+1
+    return
+
+# ************************* parse func *************************
+def parse_server(session, validation_date, fuel_version, rawxml):
+    tree = etree.fromstring(rawxml)
+    # get server info
+    server_info = tree.xpath('/list/node')
+    # server name
+    server_name = server_info[0].find('product').text
+    # server vendor
+    server_vendor_name = server_info[0].find('vendor').text
+
+    # supermicro hack
+    if server_name.find('To be filled by') != -1:
+        server_name = server_name.split('(')[0]
+        server_name = server_name.rstrip()
+    serverid = insert_server_info(session, server_name, server_vendor_name)
+    releaseid = insert_release_info(session, fuel_version)
+    validationid = insert_validation_info(session, serverid, releaseid, validation_date, 'passed')
+    insert_nic_info(session, tree, validationid)
+    insert_raid_info(session, tree, validationid)
+    while True:
+        is_correct = raw_input('Is it correct [Ja/Nicht]: ')
+        if (is_correct.lower() == "j" or is_correct.lower() == "ja"):
+            print 'Oh, ja! - Das ist fantastisch!'
+            return
+        elif (is_correct.lower() == "n" or is_correct.lower() == "nicht"):
+            print 'Nicht Validaten!'
+            session.query(Validation).filter(Validation.id == validationid).update({'result': 'failed'})
+            session.commit()
+            return
+        else:
+            print "Vvoditen J or N! Schneller!"
+    return
+
+# ************************* END FUNC *************************
+
+# MAIN 
 
 if len(sys.argv) < 2:
     print "Use the Params Luke..."
@@ -109,26 +312,9 @@ except IOError as e:
 
 # if Fuel version is absent (for old reports)
 v_fuel = 'unknown'
-
-def parse_server(rawxml):
-    tree = etree.fromstring(rawxml)
-    # get server info
-    server_info = tree.xpath('/list/node')
-    # server name
-    server_name = server_info[0].find('product').text
-    # server vendor
-    server_vendor_name = server_info[0].find('vendor').text
-
-    # supermicro hack
-    if server_name.find('To be filled by') != -1:
-        server_name = server_name.split('(')[0]
-        server_name = server_name.rstrip()
-    print server_name
-    print server_vendor_name
-    return
-
 servers_num = 0
-# parsing
+
+# parsing header
 for line in xml_report:
     if line.startswith('Date:'):            # Date field
         line.strip()
@@ -142,7 +328,6 @@ for line in xml_report:
         continue
     if line.startswith('<?xml'):            # search for starting of xml
         xml_line.append(line)
-        xml_line[servers_num] = line
         continue
     if line.strip().startswith('<') and line.strip() != '</list>':      # xml
         xml_line[servers_num] += line                    # add xml lines to str
@@ -150,178 +335,9 @@ for line in xml_report:
     if line.strip() == '</list>':           # xml ends
         xml_line[servers_num] += line
         servers_num += 1
-        print 'server num: ', servers_num
-
-for i in xml_line:
-    if len(i.strip()) > 0:               # if xml String size not null
-        parse_server(i)                  # parse xml
 
 
-'''
+for srv_report in xml_line:
+    if len(srv_report.strip()) > 0:               # if xml String size not null
+        parse_server(session_ex, v_date, v_fuel, srv_report)                  # parse xml
 
-# *******************************************************************************************************
-# *                                         DB Filling                                                  *
-# *******************************************************************************************************
-
-print colored('***** Server info *****', 'blue',  attrs=['bold'])
-# try to find server in DB
-try:
-    server_obj = session.query(Server).filter(Server.name == server_name).one()
-    print "Server", colored(server_obj.name, 'white', attrs=['bold']), "already in DB"
-# if there is no that server in DB...
-except:
-    try:
-        # try to find server's vendor is in DB
-        server_vendor_obj = session.query(Server_vendor).filter(Server_vendor.name == server_vendor_name).one()
-        # if vendor is in DB
-        server_obj = Server(name = server_name, server_vendor_id = server_vendor_obj.id)
-        print "Server vendor", colored(server_vendor_obj.name, 'green', attrs=['bold']), "already in DB"
-        print "Adding server", colored(server_obj.name, 'white', attrs=['bold']), " to DB"
-        session.add(server_obj)
-    except:
-        # if vendor is not in DB
-        print "Server vendor", colored(server_vendor_name, 'green', attrs=['bold']), "is not in DB..."
-        server_vendor_obj = Server_vendor(name=server_vendor_name)
-        server_obj = Server(name = server_name, vendor = server_vendor_obj)
-        session.add(server_vendor_obj)
-        session.add(server_obj)
-        print "Adding server vendor", colored(server_vendor_obj.name, 'green'), "to DB"
-        print "Adding server", colored(server_obj.name, 'white', attrs=['bold']), " to DB"
-session.commit()
-
-# add release info to DB
-try:
-    release_obj = session.query(Releases).filter(Releases.name == v_fuel).one()
-    print "Release", colored(release_obj.name, 'white', attrs=['bold']), "already in DB"
-except:
-    release_obj = Releases(name = v_fuel)
-    session.add(release_obj)
-    print "Adding release", colored(release_obj.name, 'white', attrs=['bold']), " to DB"
-    session.commit()
-
-# validation
-for date_format in DATE_FORMATS:
-    try:
-        dt = datetime.strptime(v_date, date_format) 
-        dt = dt.strftime('%Y-%m-%d %H:%M:%S')
-    except ValueError:
-        pass
-
-validation_obj = Validation(server_id = server_obj.id, release_id = release_obj.id, val_date = dt, result = 'passed')
-session.add(validation_obj)
-session.commit()
-
-val_id = validation_obj.id
-
-# NICs
-# looking for nodes with class network
-step = 1
-print colored('***** Devices *****', 'blue', attrs=['bold'])
-nics = tree.xpath('/list/node/node[@id="core"]/descendant::node[@class="network"]')
-for nic in nics:
-    print colored("Device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
-    nic_name = nic.find('product')
-    nic_type = nic.find('description')
-    nic_vendor = nic.find('vendor')
-    # lookging for subvalues with drivers info
-    nic_driver_name_obj = nic.find('configuration/setting[@id="driver"]')
-    nic_driver_ver_obj = nic.find('configuration/setting[@id="driverversion"]')
-    try:
-        nic_driver_name = nic_driver_name_obj.get('value')
-    except:
-        nic_driver_name = "unknown"
-    try:
-        nic_driver_ver = nic_driver_ver_obj.get('value')
-    except:
-        nic_driver_ver = "unknown"
-    try:
-        # try to find device in DB
-        device_obj = session.query(Device).filter(Device.name == nic_name.text).one()
-        print "Device", colored(device_obj.name, 'white', attrs=['bold']), colored("[", 'green'), colored(nic_vendor.text, 'green'), colored("]", 'green'), "is already in DB"
-    # if there is no that device in DB...
-    except:
-        try:
-            # try to find device's vendor is in DB
-            devmaker = session.query(Device_maker).filter(Device_maker.name == nic_vendor.text).one()
-            # if vendor is in DB...
-            device_obj = Device(name = nic_name.text, type = 'nic', device_maker_id = devmaker.id)
-            session.add(device_obj)
-            print "Vendor", colored(devmaker.name, 'green'), "already in DB"
-            print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
-            session.commit()
-        except:
-            # if vendor is not in DB...
-            print "Vendor", colored(nic_vendor.text, 'green'), "is not in DB..."
-            device_maker_obj = Device_maker(name = nic_vendor.text)
-            device_obj = Device(name = nic_name.text, type = 'nic', maker = device_maker_obj)
-            print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
-            print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
-            session.add(device_maker_obj)
-            session.add(device_obj)
-            session.commit()
-    dev_to_val_obj = Dev_to_validation(validation = validation_obj, device_id = device_obj.id, driver_name = nic_driver_name, driver_ver =  nic_driver_ver)
-    session.add(dev_to_val_obj)
-    session.commit()
-    step = step+1
-
-# RAIDs
-# looking for nodes which ids starts from storage and has class storage
-raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id,"storage") and @class="storage"]')
-for raidcnt in raids:
-    print colored("Device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
-    raid_name = raidcnt.find('product')
-    raid_type = raidcnt.find('description')
-    raid_vendor = raidcnt.find('vendor')
-    raid_driver_name_obj = raidcnt.find('configuration/setting[@id="driver"]')
-    raid_driver_ver_obj = raidcnt.find('configuration/setting[@id="driverversion"]')
-    try:
-        raid_driver_name = raid_driver_name_obj.get('value')
-    except:
-        raid_driver_name = "unknown"
-    try:
-        raid_driver_ver = raid_driver_ver_obj.get('value')
-    except:
-        raid_driver_ver = "unknown"
-    try:
-        # try to find device is in DB
-        device_obj = session.query(Device).filter(Device.name == raid_name.text).one()
-        print "Device", colored(device_obj.name, 'white', attrs=['bold']), colored("[", 'green'), colored(raid_vendor.text, 'green'), colored("]", 'green'), "is already in DB"
-    # if there is no that device in DB...
-    except:
-        try:
-            # try to find device's vendor is in DB
-            devmaker = session.query(Device_maker).filter(Device_maker.name == raid_vendor.text).one()
-            # if vendor is in DB...
-            device_obj = Device(name = raid_name.text, type = 'raid', device_maker_id = devmaker.id)
-            session.add(device_obj)
-            print "Vendor", colored(devmaker.name, 'green'), "already in DB"
-            print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
-            session.commit()
-        except:
-            # if vendor is not in DB...
-            print "Vendor", colored(raid_vendor.text, 'green'), "is not in DB..."
-            device_maker_obj = Device_maker(name = raid_vendor.text)
-            device_obj = Device(name = raid_name.text, type = 'raid', maker = device_maker_obj)
-            print "Adding vendor", colored(device_maker_obj.name, 'green'), "to DB"
-            print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
-            session.add(device_maker_obj)
-            session.add(device_obj)
-            session.commit()
-    dev_to_val_obj = Dev_to_validation(validation = validation_obj, device_id = device_obj.id, driver_name = raid_driver_name, driver_ver =  raid_driver_ver)
-    session.add(dev_to_val_obj)
-    session.commit()
-    step = step+1
-
-while True:
-    is_correct = raw_input('Is it correct [Ja/Nicht]: ')
-    if is_correct == "j":
-        print 'Oh, ja! - Das ist fantastisch!'
-        exit(0)
-    elif is_correct == "n":
-        print 'Nicht Validaten!'
-        session.query(Validation).filter(Validation.id == val_id).update({'result': 'failed'})
-        session.commit()
-        exit(0)
-    else:
-        print "Vvoditen J or N! Schneller!"
-'''
