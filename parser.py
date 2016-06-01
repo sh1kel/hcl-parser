@@ -15,10 +15,10 @@ db_name = 'hcl_test'
 
 DATE_FORMATS = ['%Y-%m-%d %H:%M:%S.%f', '%d %b %Y %H:%M', '%Y-%m-%d %H:%M']
 
-xml_line = ''
-sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name) #, echo=True)
-Session = sessionmaker(bind=sql_engine)
-session = Session()
+xml_line = []
+#sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name) #, echo=True)
+#Session = sessionmaker(bind=sql_engine)
+#session = Session()
 # DB prepare
 Base = declarative_base()
 
@@ -110,6 +110,24 @@ except IOError as e:
 # if Fuel version is absent (for old reports)
 v_fuel = 'unknown'
 
+def parse_server(rawxml):
+    tree = etree.fromstring(rawxml)
+    # get server info
+    server_info = tree.xpath('/list/node')
+    # server name
+    server_name = server_info[0].find('product').text
+    # server vendor
+    server_vendor_name = server_info[0].find('vendor').text
+
+    # supermicro hack
+    if server_name.find('To be filled by') != -1:
+        server_name = server_name.split('(')[0]
+        server_name = server_name.rstrip()
+    print server_name
+    print server_vendor_name
+    return
+
+servers_num = 0
 # parsing
 for line in xml_report:
     if line.startswith('Date:'):            # Date field
@@ -123,32 +141,23 @@ for line in xml_report:
         v_fuel = line[twodots+1:].strip()
         continue
     if line.startswith('<?xml'):            # search for starting of xml
-        xml_line = line
+        xml_line.append(line)
+        xml_line[servers_num] = line
         continue
     if line.strip().startswith('<') and line.strip() != '</list>':      # xml
-        xml_line += line                    # add xml lines to str
+        xml_line[servers_num] += line                    # add xml lines to str
+        continue
     if line.strip() == '</list>':           # xml ends
-        xml_line += line
-        break
+        xml_line[servers_num] += line
+        servers_num += 1
+        print 'server num: ', servers_num
+
+for i in xml_line:
+    if len(i.strip()) > 0:               # if xml String size not null
+        parse_server(i)                  # parse xml
 
 
-if len(xml_line.strip()) > 0:               # if xml String size not null
-    tree = etree.fromstring(xml_line)       # parse xml
-else:
-    print "XML file is broken"
-    exit(0)
-
-# get server info
-server_info = tree.xpath('/list/node')
-# server name
-server_name = server_info[0].find('product').text
-# server vendor
-server_vendor_name = server_info[0].find('vendor').text
-
-# supermicro hack
-if server_name.find('To be filled by') != -1:
-    server_name = server_name.split('(')[0]
-    server_name = server_name.rstrip()
+'''
 
 # *******************************************************************************************************
 # *                                         DB Filling                                                  *
@@ -315,4 +324,4 @@ while True:
         exit(0)
     else:
         print "Vvoditen J or N! Schneller!"
-
+'''
