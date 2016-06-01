@@ -13,8 +13,9 @@ db_pass = 'hclpass'
 db_host = '127.0.0.1'
 db_name = 'hcl_test'
 
+v_fuel = 'unknown'
+xml_started = 0
 
-xml_line = []
 sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name) #, echo=True)
 Session = sessionmaker(bind=sql_engine)
 session_ex = Session()
@@ -285,6 +286,7 @@ def parse_server(session, validation_date, fuel_version, rawxml):
         elif (is_correct.lower() == "n" or is_correct.lower() == "nicht"):
             print 'Nicht Validaten!'
             session.query(Validation).filter(Validation.id == validationid).update({'result': 'failed'})
+            #session.query(Validation).filter(Validation.server_id == serverid and Validation.release_id == releaseid).update({'result': 'failed'})
             session.commit()
             return
         else:
@@ -300,44 +302,43 @@ if len(sys.argv) < 2:
     print sys.argv[0], " hw_report_filename.txt"
     exit(0)
 
-print colored("Parsing ", 'cyan'), sys.argv[1]
-document = sys.argv[1]
-# try to open report file
-try:
-    xml_report = open(document, 'r')
-except IOError as e:
-    print "I/O error({0}): {1}".format(e.errno, e.strerror)
-    exit(1)
-
-
-# if Fuel version is absent (for old reports)
-v_fuel = 'unknown'
-servers_num = 0
-
-# parsing header
-for line in xml_report:
-    if line.startswith('Date:'):            # Date field
-        line.strip()
-        twodots = line.find(':')            # search for :
-        v_date = line[twodots+1:].strip()   # get value after :
+for report_arg in range(1, (len(sys.argv))):
+    xml_line = []
+    servers_num = 0
+    print colored("Parsing ", 'cyan'), sys.argv[report_arg]
+    document = sys.argv[report_arg]
+    # try to open report file
+    try:
+        xml_report = open(document, 'r')
+    except IOError as e:
+        print "I/O error({0}): {1}".format(e.errno, e.strerror)
         continue
-    if line.startswith('Fuel version'):
-        line.strip()
-        twodots = line.find(':')
-        v_fuel = line[twodots+1:].strip()
-        continue
-    if line.startswith('<?xml'):            # search for starting of xml
-        xml_line.append(line)
-        continue
-    if line.strip().startswith('<') and line.strip() != '</list>':      # xml
-        xml_line[servers_num] += line                    # add xml lines to str
-        continue
-    if line.strip() == '</list>':           # xml ends
-        xml_line[servers_num] += line
-        servers_num += 1
+    for line in xml_report:
+        if line.startswith('Date:'):            # Date field
+            line.strip()
+            twodots = line.find(':')            # search for :
+            v_date = line[twodots+1:].strip()   # get value after :
+            continue
+        if line.startswith('Fuel version'):
+            line.strip()
+            twodots = line.find(':')
+            v_fuel = line[twodots+1:].strip()
+            continue
+        if line.startswith('<?xml'):            # search for starting of xml
+            xml_line.append(line)
+            xml_started = 1
+            continue
+        if (xml_started == 1 and line.strip().startswith('<') and line.strip() != '</list>'):      # xml
+            xml_line[servers_num] += line                    # add xml lines to str
+            continue
+        if (xml_started == 1 and line.strip() == '</list>'):           # xml ends
+            xml_line[servers_num] += line
+            servers_num += 1
+            xml_started = 0
+    for srv_report in xml_line:
+        if len(srv_report.strip()) > 0:               # if xml String size not null
+            parse_server(session_ex, v_date, v_fuel, srv_report)                  # parse xml
+        else:
+            print report_arg, " is not xml file"
 
-
-for srv_report in xml_line:
-    if len(srv_report.strip()) > 0:               # if xml String size not null
-        parse_server(session_ex, v_date, v_fuel, srv_report)                  # parse xml
 
