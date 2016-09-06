@@ -8,13 +8,15 @@ from termcolor import colored
 from datetime import datetime
 
 # db credentials
-db_user = 'hcluser'
-db_pass = 'hclpass'
-db_host = '127.0.0.1'
-db_name = 'hcl_test'
+db_user = ''
+db_pass = ''
+db_host = ''
+db_name = ''
 
 v_fuel = 'unknown'
 xml_started = 0
+
+vendor_list = ['Dell','Cisco','VMware','Fujitsu','Huawei','Supermicro']
 
 sql_engine = create_engine("mysql://" + db_user + ":" + db_pass + "@" + db_host +"/" + db_name) #, echo=True)
 Session = sessionmaker(bind=sql_engine)
@@ -268,7 +270,10 @@ def parse_server(session, validation_date, fuel_version, rawxml):
     server_name = server_info[0].find('product').text
     # server vendor
     server_vendor_name = server_info[0].find('vendor').text
-
+    for vendor in vendor_list:
+        if server_vendor_name.startswith(vendor):
+            server_vendor_name = vendor
+            break
     # supermicro hack
     if server_name.find('To be filled by') != -1:
         server_name = server_name.split('(')[0]
