@@ -31,7 +31,7 @@ class Validation(Base):
     server_id           = Column(Integer, ForeignKey("server.id"), nullable=False, primary_key=True)
     release_id          = Column(Integer, ForeignKey("releases.id"), nullable=False, primary_key=True)
     val_date            = Column(DateTime, nullable=False)
-    result              = Column(Enum('passed','partially passed','failed'))
+    result              = Column(Enum('passed','partially passed','failed', 'invisible'))
     notes               = Column(String(4000))
     release             = relationship("Releases")
     server              = relationship("Server", backref=backref('server'), uselist=True, cascade='delete,all')
@@ -155,6 +155,33 @@ def insert_validation_info(session, serverid, releaseid, validation_date, result
     session.commit()
     return validation_obj.id
 
+# show nic func
+def show_nic_info(tree):
+    # NICs
+    # looking for nodes with class network
+    step = 1
+    print colored('***** Devices *****', 'blue', attrs=['bold'])
+    nics = tree.xpath('/list/node/node[@id="core"]/descendant::node[@class="network"]')
+    for nic in nics:
+        print colored("NIC device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
+        nic_name = nic.find('product')
+        nic_type = nic.find('description')
+        nic_vendor = nic.find('vendor')
+        # lookging for subvalues with drivers info
+        nic_driver_name_obj = nic.find('configuration/setting[@id="driver"]')
+        nic_driver_ver_obj = nic.find('configuration/setting[@id="driverversion"]')
+        try:
+            nic_driver_name = nic_driver_name_obj.get('value')
+        except:
+            nic_driver_name = "unknown"
+        try:
+            nic_driver_ver = nic_driver_ver_obj.get('value')
+        except:
+            nic_driver_ver = "unknown"
+        print "Device", colored(nic_name.text, 'white', attrs=['bold']), colored("[", 'green'), colored(nic_vendor.text, 'green'), colored("]", 'green'), ""
+        step = step+1
+    return
+
 # ************************* nic info func *************************
 def insert_nic_info(session, tree, validationid):
     # NICs
@@ -163,7 +190,7 @@ def insert_nic_info(session, tree, validationid):
     print colored('***** Devices *****', 'blue', attrs=['bold'])
     nics = tree.xpath('/list/node/node[@id="core"]/descendant::node[@class="network"]')
     for nic in nics:
-        print colored("NIC device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
+        #print colored("NIC device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
         nic_name = nic.find('product')
         nic_type = nic.find('description')
         nic_vendor = nic.find('vendor')
@@ -210,13 +237,38 @@ def insert_nic_info(session, tree, validationid):
     return
 
 # ************************* raid info func *************************
-def insert_raid_info(session, tree, validationid):
+def show_raid_info(tree):
     # RAIDs
     # looking for nodes which ids starts from storage and has class storage
     step = 1
     raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id,"storage") and @class="storage"]')
     for raidcnt in raids:
         print colored("RAID device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
+        raid_name = raidcnt.find('product')
+        raid_type = raidcnt.find('description')
+        raid_vendor = raidcnt.find('vendor')
+        raid_driver_name_obj = raidcnt.find('configuration/setting[@id="driver"]')
+        raid_driver_ver_obj = raidcnt.find('configuration/setting[@id="driverversion"]')
+        try:
+            raid_driver_name = raid_driver_name_obj.get('value')
+        except:
+            raid_driver_name = "unknown"
+        try:
+            raid_driver_ver = raid_driver_ver_obj.get('value')
+        except:
+            raid_driver_ver = "unknown"
+        print "Device", colored(raid_name.text, 'white', attrs=['bold']), colored("[", 'green'), colored(raid_vendor.text, 'green'), colored("]", 'green')
+        step = step+1
+    return
+
+# ************************* raid info func *************************
+def insert_raid_info(session, tree, validationid):
+    # RAIDs
+    # looking for nodes which ids starts from storage and has class storage
+    step = 1
+    raids = tree.xpath('/list/node/node[@id="core"]/descendant::node[starts-with(@id,"storage") and @class="storage"]')
+    for raidcnt in raids:
+        #print colored("RAID device #", 'yellow', attrs=['bold']), colored(step, 'yellow', attrs=['bold']), colored("found!",'yellow', attrs=['bold'])
         raid_name = raidcnt.find('product')
         raid_type = raidcnt.find('description')
         raid_vendor = raidcnt.find('vendor')
@@ -243,7 +295,7 @@ def insert_raid_info(session, tree, validationid):
                 device_obj = Device(name = raid_name.text, type = 'raid', device_maker_id = devmaker.id)
                 session.add(device_obj)
                 print "Vendor", colored(devmaker.name, 'green'), "already in DB"
-                print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
+                #print "Adding device", colored(device_obj.name, 'white', attrs=['bold']), " to DB"
                 session.commit()
             except:
                 # if vendor is not in DB...
@@ -278,24 +330,41 @@ def parse_server(session, validation_date, fuel_version, rawxml):
     if server_name.find('To be filled by') != -1:
         server_name = server_name.split('(')[0]
         server_name = server_name.rstrip()
-    serverid = insert_server_info(session, server_name, server_vendor_name)
-    releaseid = insert_release_info(session, fuel_version)
-    validationid = insert_validation_info(session, serverid, releaseid, validation_date, 'passed')
-    insert_nic_info(session, tree, validationid)
-    insert_raid_info(session, tree, validationid)
+    #serverid = insert_server_info(session, server_name, server_vendor_name)
+    #releaseid = insert_release_info(session, fuel_version)
+    #validationid = insert_validation_info(session, serverid, releaseid, validation_date, 'passed')
+    show_nic_info(tree)
+    show_raid_info(tree)
+    #insert_nic_info(session, tree, validationid)
+    #insert_raid_info(session, tree, validationid)
     while True:
-        is_correct = raw_input('Is it correct [Ja/Nicht]: ')
-        if (is_correct.lower() == "j" or is_correct.lower() == "ja"):
+        is_correct = raw_input('Choose action: [(1)Validated/(2)Not validated/(3)Do not add]: ')
+        if (is_correct.lower() == "V" or is_correct.lower() == "1"):
             print 'Oh, ja! - Das ist fantastisch!'
-            return
-        elif (is_correct.lower() == "n" or is_correct.lower() == "nicht"):
-            print 'Nicht Validaten!'
-            session.query(Validation).filter(Validation.id == validationid).update({'result': 'failed'})
-            #session.query(Validation).filter(Validation.server_id == serverid and Validation.release_id == releaseid).update({'result': 'failed'})
+            serverid = insert_server_info(session, server_name, server_vendor_name)
+            releaseid = insert_release_info(session, fuel_version)
+            validationid = insert_validation_info(session, serverid, releaseid, validation_date, 'passed')
+            insert_nic_info(session, tree, validationid)
+            insert_raid_info(session, tree, validationid)
             session.commit()
             return
+        elif (is_correct.lower() == "N" or is_correct.lower() == "2"):
+            print 'Nicht Validaten!'
+            serverid = insert_server_info(session, server_name, server_vendor_name)
+            releaseid = insert_release_info(session, fuel_version)
+            validationid = insert_validation_info(session, serverid, releaseid, validation_date, 'failed')
+            insert_nic_info(session, tree, validationid)
+            insert_raid_info(session, tree, validationid)
+            session.commit()
+            #session.query(Validation).filter(Validation.id == validationid).update({'result': 'failed'})
+            #session.query(Validation).filter(Validation.server_id == serverid and Validation.release_id == releaseid).update({'result': 'failed'})
+            #session.commit()
+            return
+        elif (is_correct.lower() == "D" or is_correct.lower() == "3"):
+            print 'You haven\'t added this server!'
+            return
         else:
-            print "Vvoditen J or N! Schneller!"
+            print "Vvoditen 1,2 or 3! Schneller!"
     return
 
 # ************************* END FUNC *************************
