@@ -330,13 +330,9 @@ def parse_server(session, validation_date, fuel_version, rawxml):
     if server_name.find('To be filled by') != -1:
         server_name = server_name.split('(')[0]
         server_name = server_name.rstrip()
-    #serverid = insert_server_info(session, server_name, server_vendor_name)
-    #releaseid = insert_release_info(session, fuel_version)
-    #validationid = insert_validation_info(session, serverid, releaseid, validation_date, 'passed')
+    print "Server ", colored(server_name, 'white', attrs=['bold']), colored("[", 'green'), colored(server_vendor_name, 'green'), colored("]", 'green')
     show_nic_info(tree)
     show_raid_info(tree)
-    #insert_nic_info(session, tree, validationid)
-    #insert_raid_info(session, tree, validationid)
     while True:
         is_correct = raw_input('Choose action: [(1)Validated/(2)Not validated/(3)Do not add]: ')
         if (is_correct.lower() == "V" or is_correct.lower() == "1"):
